@@ -1,0 +1,110 @@
+{
+  "issues": [
+    {
+      "confidence": 1.0,
+      "evidence": "no meta[name=viewport] tag with content",
+      "id": "seo-viewport",
+      "impact_rank": 1,
+      "severity": "high"
+    },
+    {
+      "confidence": 0.9,
+      "evidence": "Potential savings of 1,200 ms (score 0.1)",
+      "id": "pagespeed-audit-render-blocking-resources",
+      "impact_rank": 2,
+      "severity": "high"
+    },
+    {
+      "confidence": 0.9,
+      "evidence": "Potential savings of 400 KiB (score 0.3)",
+      "id": "pagespeed-audit-unused-javascript",
+      "impact_rank": 3,
+      "severity": "high"
+    },
+    {
+      "confidence": 0.9,
+      "evidence": "score 0.0",
+      "id": "pagespeed-audit-uses-http2",
+      "impact_rank": 4,
+      "severity": "high"
+    },
+    {
+      "confidence": 0.9,
+      "evidence": "Page weight 2,140 KiB (score 0.41)",
+      "id": "pagespeed-byte-weight",
+      "impact_rank": 5,
+      "severity": "high"
+    },
+    {
+      "confidence": 0.9,
+      "evidence": "LCP 4.8 s (score 0.32)",
+      "id": "pagespeed-lcp",
+      "impact_rank": 6,
+      "severity": "high"
+    },
+    {
+      "confidence": 1.0,
+      "evidence": "2 h1 tags found: Same day plumbing repairs in Springfield | Second heading kept for the parser test",
+      "id": "seo-h1-multiple",
+      "impact_rank": 7,
+      "severity": "medium"
+    },
+    {
+      "confidence": 1.0,
+      "evidence": "1 JSON-LD blocks failed to parse: Expecting value: line 2 column 1 (char 1)",
+      "id": "seo-jsonld-invalid",
+      "impact_rank": 8,
+      "severity": "medium"
+    },
+    {
+      "confidence": 1.0,
+      "evidence": "no meta[property=og:description] tag with content",
+      "id": "seo-og-description",
+      "impact_rank": 9,
+      "severity": "medium"
+    },
+    {
+      "confidence": 0.9,
+      "evidence": "Root document took 900 ms (score 0.75)",
+      "id": "pagespeed-audit-server-response-time",
+      "impact_rank": 10,
+      "severity": "medium"
+    },
+    {
+      "confidence": 0.9,
+      "evidence": "Potential savings of 800 KiB (score 0.5)",
+      "id": "pagespeed-audit-uses-responsive-images",
+      "impact_rank": 11,
+      "severity": "medium"
+    },
+    {
+      "confidence": 0.9,
+      "evidence": "INP 320 ms (score 0.62)",
+      "id": "pagespeed-responsiveness",
+      "impact_rank": 12,
+      "severity": "medium"
+    }
+  ],
+  "limitations": [],
+  "score": {
+    "components": [
+      {
+        "name": "high_issues",
+        "value": 60.0,
+        "weight": 0.1
+      },
+      {
+        "name": "medium_issues",
+        "value": 30.0,
+        "weight": 0.05
+      },
+      {
+        "name": "low_issues",
+        "value": 0.0,
+        "weight": 0.02
+      }
+    ],
+    "formula_version": "v1.0",
+    "value": 10.0
+  }
+}

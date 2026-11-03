@@ -1,0 +1,1 @@
+{"description": "Website diagnosis for small business owners.", "display": "standalone", "icons": [{"sizes": "192x192", "src": "/icon-192.png", "type": "image/png"}, {"sizes": "512x512", "src": "/icon-512.png", "type": "image/png"}], "name": "Fix It Proper", "short_name": "Fix It Proper", "start_url": "/", "theme_color": "#f5f5f3"}

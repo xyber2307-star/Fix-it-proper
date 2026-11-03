@@ -1,0 +1,112 @@
+{
+  "issues": [
+    {
+      "confidence": 1.0,
+      "evidence": "no <title> tag in HTML",
+      "id": "seo-title-missing",
+      "impact_rank": 1,
+      "severity": "high"
+    },
+    {
+      "confidence": 1.0,
+      "evidence": "no meta[name=viewport] tag with content",
+      "id": "seo-viewport",
+      "impact_rank": 2,
+      "severity": "high"
+    },
+    {
+      "confidence": 1.0,
+      "evidence": "no <h1> in HTML",
+      "id": "seo-h1-missing",
+      "impact_rank": 3,
+      "severity": "high"
+    },
+    {
+      "confidence": 1.0,
+      "evidence": "no meta[name=description] tag with content",
+      "id": "seo-meta-description-missing",
+      "impact_rank": 4,
+      "severity": "high"
+    },
+    {
+      "confidence": 1.0,
+      "evidence": "no link[rel=canonical] tag with href",
+      "id": "seo-canonical-missing",
+      "impact_rank": 5,
+      "severity": "medium"
+    },
+    {
+      "confidence": 1.0,
+      "evidence": "no meta[property=og:image] tag with content",
+      "id": "seo-og-image",
+      "impact_rank": 6,
+      "severity": "medium"
+    },
+    {
+      "confidence": 1.0,
+      "evidence": "no meta[property=og:title] tag with content",
+      "id": "seo-og-title",
+      "impact_rank": 7,
+      "severity": "medium"
+    },
+    {
+      "confidence": 1.0,
+      "evidence": "no meta[property=og:description] tag with content",
+      "id": "seo-og-description",
+      "impact_rank": 8,
+      "severity": "medium"
+    },
+    {
+      "confidence": 0.85,
+      "evidence": "no JSON-LD structured data found",
+      "id": "seo-structured-data-missing",
+      "impact_rank": 9,
+      "severity": "medium"
+    },
+    {
+      "confidence": 1.0,
+      "evidence": "no lang attribute on <html>",
+      "id": "seo-lang",
+      "impact_rank": 10,
+      "severity": "low"
+    },
+    {
+      "confidence": 1.0,
+      "evidence": "no meta[name=twitter:card] tag with content",
+      "id": "seo-twitter-card",
+      "impact_rank": 11,
+      "severity": "low"
+    },
+    {
+      "confidence": 0.7,
+      "evidence": "evidence youtube-cta-missing",
+      "id": "youtube-cta-missing",
+      "impact_rank": 12,
+      "severity": "low"
+    }
+  ],
+  "limitations": [
+    "YouTube results are checklist based and not a performance forecast."
+  ],
+  "score": {
+    "components": [
+      {
+        "name": "high_issues",
+        "value": 40.0,
+        "weight": 0.1
+      },
+      {
+        "name": "medium_issues",
+        "value": 25.0,
+        "weight": 0.05
+      },
+      {
+        "name": "low_issues",
+        "value": 6.0,
+        "weight": 0.02
+      }
+    ],
+    "formula_version": "v1.0",
+    "value": 29.0
+  }
+}

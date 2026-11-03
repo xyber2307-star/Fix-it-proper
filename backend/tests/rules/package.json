@@ -1,0 +1,10 @@
+{
+  "name": "fixitproper-rules-tests",
+  "private": true,
+  "type": "module",
+  "description": "Firestore security rules tests. Run against the emulator: node --test rules.test.mjs",
+  "dependencies": {
+    "@firebase/rules-unit-testing": "^6.0.0",
+    "firebase": "^13.2.0"
+  }
+}

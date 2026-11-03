@@ -1,0 +1,7 @@
+# Netlify and Cloudflare Pages: serve prerendered pages at clean URLs.
+# Other static hosts need the equivalent rewrite; the .html files always work directly.
+/privacy /privacy.html 200
+/terms /terms.html 200
+/contact /contact.html 200
+/signin /signin.html 200
+/saved /saved.html 200

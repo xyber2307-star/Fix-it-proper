@@ -1,0 +1,56 @@
+{
+  "issues": [
+    {
+      "confidence": 0.9,
+      "evidence": "evidence pagespeed-lcp",
+      "id": "pagespeed-lcp",
+      "impact_rank": 1,
+      "severity": "high"
+    },
+    {
+      "confidence": 1.0,
+      "evidence": "evidence seo-canonical-missing",
+      "id": "seo-canonical-missing",
+      "impact_rank": 2,
+      "severity": "medium"
+    },
+    {
+      "confidence": 0.5,
+      "evidence": "evidence seo-viewport",
+      "id": "seo-viewport",
+      "impact_rank": 3,
+      "severity": "high"
+    },
+    {
+      "confidence": 1.0,
+      "evidence": "evidence seo-lang",
+      "id": "seo-lang",
+      "impact_rank": 4,
+      "severity": "low"
+    }
+  ],
+  "limitations": [
+    "sample limitation"
+  ],
+  "score": {
+    "components": [
+      {
+        "name": "high_issues",
+        "value": 20.0,
+        "weight": 0.1
+      },
+      {
+        "name": "medium_issues",
+        "value": 5.0,
+        "weight": 0.05
+      },
+      {
+        "name": "low_issues",
+        "value": 2.0,
+        "weight": 0.02
+      }
+    ],
+    "formula_version": "v1.0",
+    "value": 73.0
+  }
+}

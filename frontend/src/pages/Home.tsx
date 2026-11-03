@@ -232,12 +232,25 @@ export default function Home() {
             </p>
           )}
           {user === null && configured && (
-            <p className="mt-3 text-sm text-muted">
-              <Link to="/signin" className="underline underline-offset-4">
-                Sign in
-              </Link>{" "}
-              to keep a history of your reports.
-            </p>
+            <>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Link
+                  to="/signin"
+                  className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md border border-line bg-surface px-5 font-semibold text-ink transition-colors duration-150 hover:border-muted"
+                >
+                  Sign in
+                </Link>
+                <Link
+                  to="/signin?mode=signup"
+                  className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md border border-line bg-surface px-5 font-semibold text-ink transition-colors duration-150 hover:border-muted"
+                >
+                  Create account
+                </Link>
+              </div>
+              <p className="mt-2 text-sm text-muted">
+                Keep a history of your reports, saved for 30 days.
+              </p>
+            </>
           )}
         </form>
       </Card>

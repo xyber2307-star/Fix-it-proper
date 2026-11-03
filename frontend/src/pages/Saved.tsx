@@ -27,6 +27,22 @@ export default function Saved() {
   const navigate = useNavigate();
   const [reports, setReports] = useState<ReportSummary[] | null>(null);
   const [loadError, setLoadError] = useState("");
+  const [loadErrorCode, setLoadErrorCode] = useState("");
+
+  function clearError() {
+    setLoadError("");
+    setLoadErrorCode("");
+  }
+
+  function failWith(unknown: unknown, fallback: string) {
+    if (unknown instanceof AnalyzeError) {
+      setLoadError(unknown.message);
+      setLoadErrorCode(unknown.code);
+    } else {
+      setLoadError(fallback);
+      setLoadErrorCode("");
+    }
+  }
   const [notice, setNotice] = useState("");
   const [confirming, setConfirming] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -37,7 +53,7 @@ export default function Saved() {
     if (!ready || user === null) return;
     let cancelled = false;
     setReports(null);
-    setLoadError("");
+    clearError();
     getToken()
       .then((token) => {
         if (token === null) throw new Error("missing token");
@@ -48,11 +64,7 @@ export default function Saved() {
       })
       .catch((unknown: unknown) => {
         if (cancelled) return;
-        const message =
-          unknown instanceof AnalyzeError
-            ? unknown.message
-            : "Could not load saved reports. Try again.";
-        setLoadError(message);
+        failWith(unknown, "Could not load saved reports. Try again.");
       });
     return () => {
       cancelled = true;
@@ -62,7 +74,7 @@ export default function Saved() {
   async function onDelete(id: string) {
     setDeleting(true);
     setNotice("");
-    setLoadError("");
+    clearError();
     try {
       const token = await getToken();
       if (token === null) throw new Error("missing token");
@@ -71,11 +83,7 @@ export default function Saved() {
       setConfirming(null);
       setNotice("Report deleted.");
     } catch (unknown) {
-      const message =
-        unknown instanceof AnalyzeError
-          ? unknown.message
-          : "Could not delete the report. Try again.";
-      setLoadError(message);
+      failWith(unknown, "Could not delete the report. Try again.");
     } finally {
       setDeleting(false);
     }
@@ -84,7 +92,7 @@ export default function Saved() {
   async function onDeleteAccount() {
     setDeletingAccount(true);
     setNotice("");
-    setLoadError("");
+    clearError();
     try {
       const token = await getToken();
       if (token === null) throw new Error("missing token");
@@ -92,11 +100,7 @@ export default function Saved() {
       await signOut();
       navigate("/");
     } catch (unknown) {
-      const message =
-        unknown instanceof AnalyzeError
-          ? unknown.message
-          : "Could not delete your account. Try again.";
-      setLoadError(message);
+      failWith(unknown, "Could not delete your account. Try again.");
     } finally {
       setDeletingAccount(false);
     }
@@ -137,6 +141,14 @@ export default function Saved() {
         {loadError !== "" && (
           <Alert tone="error" title="Something went wrong.">
             {loadError}
+            {loadErrorCode === "UNAUTHORIZED" && (
+              <p className="mt-1">
+                Your session may have expired.{" "}
+                <Link to="/signin" className="underline underline-offset-4">
+                  Sign in again.
+                </Link>
+              </p>
+            )}
           </Alert>
         )}
         {ready && user !== null && reports !== null && reports.length === 0 && !loadError && (

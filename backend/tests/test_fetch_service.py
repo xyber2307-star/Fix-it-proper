@@ -159,11 +159,18 @@ def test_classify_missing_content_type_sniffs_body():
     assert exc_info.value.code == "NOT_HTML"
 
 
-def test_classify_missing_pages_raise_not_found():
+@pytest.mark.parametrize("tier", [1, 2])
+def test_classify_missing_page_with_og_is_og_only(tier: Tier) -> None:
+    output = _raw(status_code=404, html=_read_fixture("blocked_403.html"))
+    assert classify_output(output, tier) == (3, "og_only")
+
+
+@pytest.mark.parametrize(("status", "label"), [(404, "404"), (410, "410")])
+def test_classify_missing_pages_raise_not_found(status: int, label: str) -> None:
     with pytest.raises(FetchError) as exc_info:
-        classify_output(_raw(status_code=404), 2)
+        classify_output(_raw(status_code=status), 2)
     assert exc_info.value.code == "FETCH_FAILED"
-    assert "404" in exc_info.value.public_message
+    assert label in exc_info.value.public_message
 
 
 def test_classify_server_errors_raise():

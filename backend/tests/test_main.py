@@ -51,6 +51,13 @@ def test_health_ok_and_request_id(client):
     assert response.headers["X-Request-ID"]
 
 
+def test_unknown_paths_return_contract_not_found(client):
+    for path in ("/api/analyze-missing", "//api/analyze"):
+        response = client.post(path, json={"url": "https://example.com/"})
+        assert response.status_code == 404
+        assert response.json() == {"code": "NOT_FOUND", "message": "Not found.", "retryable": False}
+
+
 def test_request_id_is_echod_when_sane_and_replaced_when_not(client):
     echoed = client.get("/api/health", headers={"X-Request-ID": "abc-123"})
     assert echoed.headers["X-Request-ID"] == "abc-123"

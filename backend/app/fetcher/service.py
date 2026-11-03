@@ -85,6 +85,10 @@ def classify_output(output: RawFetch, source_tier: Tier) -> tuple[Tier, DataQual
             return (3, "og_only")
         raise FetchError("FETCH_BLOCKED", reason=f"status: {output.status_code}")
     if output.status_code in (404, 410):
+        # A missing page cannot be checked, but its template usually carries
+        # the site's own meta tags, so salvage those before giving up.
+        if extract_features(output.html).has_og_data:
+            return (3, "og_only")
         raise FetchError("FETCH_FAILED", f"Page not found ({output.status_code}).")
     if 400 <= output.status_code < 600:
         raise FetchError("FETCH_FAILED", f"Site returned status {output.status_code}.")

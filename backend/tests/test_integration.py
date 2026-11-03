@@ -250,6 +250,39 @@ def test_invalid_url_returns_contract_error(client):
     assert ErrorResponse.model_validate(response.json()).code == "INVALID_URL"
 
 
+def test_page_not_found_returns_typed_error(client, monkeypatch):
+    def fake_prepare_fetch(raw_url: str, **kwargs: Any) -> FetchedPage:
+        raise FetchError("FETCH_FAILED", "Page not found (404).")
+
+    monkeypatch.setattr("app.analyze.prepare_fetch", fake_prepare_fetch)
+    response = client.post("/api/analyze", json={"url": "https://example.com/gone"})
+    assert response.status_code == 502
+    body = response.json()
+    assert set(body.keys()) == {"code", "message", "retryable"}
+    assert ErrorResponse.model_validate(body) == ErrorResponse(
+        code="FETCH_FAILED",
+        message="Page not found (404).",
+        retryable=False,
+    )
+
+
+def test_unexpected_pipeline_error_returns_internal_error(require_loop, monkeypatch):
+    settings = Settings(
+        frontend_origin="https://app.test", rate_limit_per_hour=100, log_level="WARNING"
+    )
+    quiet_client = TestClient(create_app(settings), raise_server_exceptions=False)
+
+    async def fake_run_analysis(raw_url: str, **kwargs: Any) -> AnalyzeResponse:
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr("app.main.run_analysis", fake_run_analysis)
+    response = quiet_client.post("/api/analyze", json={"url": "https://example.com/"})
+    assert response.status_code == 500
+    body = response.json()
+    assert set(body.keys()) == {"code", "message", "retryable"}
+    assert ErrorResponse.model_validate(body).code == "INTERNAL_ERROR"
+
+
 def test_second_request_serves_cached_analysis_with_fresh_request_id(client, monkeypatch):
     seo = SeoAnalysis(issues=[_issue()], stats=_stats())
     pagespeed = PageSpeedAnalysis(issues=[], limitations=[])

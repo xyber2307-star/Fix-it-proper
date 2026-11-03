@@ -4,6 +4,7 @@ import {
   currentUserToken,
   friendlyAuthError,
   isFirebaseConfigured,
+  sendPasswordReset,
   signInWithGoogle as signInGoogle,
   signInWithPassword,
   signOutUser,
@@ -19,6 +20,7 @@ interface AuthContextValue {
   signUp: (email: string, password: string) => Promise<AuthUser>;
   signIn: (email: string, password: string) => Promise<AuthUser>;
   signInGoogle: () => Promise<AuthUser>;
+  sendReset: (email: string) => Promise<void>;
   signOut: () => Promise<void>;
   getToken: () => Promise<string | null>;
 }
@@ -61,6 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signUp: signUpWithPassword,
     signIn: signInWithPassword,
     signInGoogle,
+    sendReset: sendPasswordReset,
     signOut: signOutUser,
     getToken: currentUserToken,
   };

@@ -90,6 +90,12 @@ export async function signInWithGoogle(): Promise<AuthUser> {
   return toAuthUser(credential.user);
 }
 
+export async function sendPasswordReset(email: string): Promise<void> {
+  const auth = await loadAuth();
+  const { sendPasswordResetEmail } = await import("firebase/auth");
+  await sendPasswordResetEmail(auth, email);
+}
+
 export async function signOutUser(): Promise<void> {
   const auth = await loadAuth();
   const { signOut } = await import("firebase/auth");

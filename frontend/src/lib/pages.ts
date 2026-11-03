@@ -42,6 +42,12 @@ export const PAGE_META: PageMeta[] = [
     description: `Sign in to ${BRAND.name} with email or Google to keep a history of saved reports.`,
   },
   {
+    path: "/signup",
+    shortTitle: "Create account",
+    fullTitle: `Create account - ${BRAND.name}`,
+    description: `Create a ${BRAND.name} account with email or Google to save website reports for 30 days.`,
+  },
+  {
     path: "/saved",
     shortTitle: "Saved reports",
     fullTitle: `Saved reports - ${BRAND.name}`,

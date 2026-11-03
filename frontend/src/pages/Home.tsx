@@ -227,8 +227,8 @@ export default function Home() {
           </div>
           {user !== null && (
             <p className="mt-3 text-sm text-muted">
-              Signed in as {user.email ?? "your account"}. This report will be saved
-              to your history.
+              Signed in as {user.displayName ?? user.email ?? "your account"}. This
+              report will be saved to your history.
             </p>
           )}
           {user === null && configured && (
@@ -241,10 +241,10 @@ export default function Home() {
                   Sign in
                 </Link>
                 <Link
-                  to="/signin?mode=signup"
+                  to="/signup"
                   className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md border border-line bg-surface px-5 font-semibold text-ink transition-colors duration-150 hover:border-muted"
                 >
-                  Create account
+                  Get Started
                 </Link>
               </div>
               <p className="mt-2 text-sm text-muted">

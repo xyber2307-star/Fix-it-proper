@@ -66,11 +66,14 @@ function toAuthUser(user: User): AuthUser {
 export async function signUpWithPassword(
   email: string,
   password: string,
+  displayName: string,
 ): Promise<AuthUser> {
   const auth = await loadAuth();
-  const { createUserWithEmailAndPassword } = await import("firebase/auth");
+  const { createUserWithEmailAndPassword, updateProfile } = await import("firebase/auth");
   const credential = await createUserWithEmailAndPassword(auth, email, password);
-  return toAuthUser(credential.user);
+  await updateProfile(credential.user, { displayName });
+  await credential.user.reload();
+  return toAuthUser(auth.currentUser ?? credential.user);
 }
 
 export async function signInWithPassword(

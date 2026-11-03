@@ -103,7 +103,7 @@ export default function Header() {
             (user !== null ? (
               <span className="flex items-center gap-3">
                 <span className="max-w-[180px] truncate text-sm text-muted">
-                  {user.email ?? "Signed in"}
+                  {user.displayName ?? user.email ?? "Signed in"}
                 </span>
                 <Button variant="secondary" onClick={() => void onSignOut()}>
                   Sign out

@@ -17,7 +17,7 @@ interface AuthContextValue {
   user: AuthUser | null;
   ready: boolean;
   configured: boolean;
-  signUp: (email: string, password: string) => Promise<AuthUser>;
+  signUp: (email: string, password: string, name: string) => Promise<AuthUser>;
   signIn: (email: string, password: string) => Promise<AuthUser>;
   signInGoogle: () => Promise<AuthUser>;
   sendReset: (email: string) => Promise<void>;
@@ -41,7 +41,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
     watchAuthState((next) => {
       if (cancelled) return;
-      setUser(next);
+      setUser((prev) => {
+        if (
+          prev !== null &&
+          next !== null &&
+          prev.uid === next.uid &&
+          prev.displayName !== null &&
+          next.displayName === null
+        ) {
+          return prev;
+        }
+        return next;
+      });
       setReady(true);
     })
       .then((stop) => {
@@ -56,15 +67,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [configured]);
 
+  async function wrappedSignUp(email: string, password: string, name: string) {
+    const account = await signUpWithPassword(email, password, name);
+    setUser(account);
+    return account;
+  }
+
+  async function wrappedSignIn(email: string, password: string) {
+    const account = await signInWithPassword(email, password);
+    setUser(account);
+    return account;
+  }
+
+  async function wrappedSignInGoogle() {
+    const account = await signInGoogle();
+    setUser(account);
+    return account;
+  }
+
+  async function wrappedSignOut() {
+    await signOutUser();
+    setUser(null);
+  }
+
   const value: AuthContextValue = {
     user,
     ready,
     configured,
-    signUp: signUpWithPassword,
-    signIn: signInWithPassword,
-    signInGoogle,
+    signUp: wrappedSignUp,
+    signIn: wrappedSignIn,
+    signInGoogle: wrappedSignInGoogle,
     sendReset: sendPasswordReset,
-    signOut: signOutUser,
+    signOut: wrappedSignOut,
     getToken: currentUserToken,
   };
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

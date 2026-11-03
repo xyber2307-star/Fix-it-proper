@@ -38,8 +38,8 @@ export default function Privacy() {
         <p>
           Signing in is optional and analysis works without it. Accounts are handled by
           Firebase Authentication with email and password or Google sign in. We store
-          your account ID, your email address, and the dates you joined and last signed
-          in.
+          your account ID, your name, your email address, and the dates you joined and
+          last signed in.
         </p>
         <p>
           Analyses you run while signed in are saved to your history with the URL, the

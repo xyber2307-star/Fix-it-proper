@@ -45,6 +45,8 @@ export default function Site() {
             <Route path="/contact.html" element={<Contact />} />
             <Route path="/signin" element={<SignIn />} />
             <Route path="/signin.html" element={<SignIn />} />
+            <Route path="/signup" element={<SignIn />} />
+            <Route path="/signup.html" element={<SignIn />} />
             <Route path="/saved" element={<Saved />} />
             <Route path="/saved.html" element={<Saved />} />
             <Route path="*" element={<NotFound />} />

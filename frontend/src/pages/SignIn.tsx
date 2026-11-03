@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { friendlyAuthError, useAuth } from "../auth/AuthContext";
 import Alert from "../components/Alert";
 import Breadcrumbs from "../components/Breadcrumbs";
@@ -13,18 +13,25 @@ import { metaForPath } from "../lib/pages";
 
 type Mode = "signin" | "signup" | "reset";
 
-function modeFromParam(value: string | null): Mode {
+function routePath(pathname: string): string {
+  return pathname.replace(/\.html$/, "");
+}
+
+function modeFromParam(value: string | null, pathname: string): Mode {
   if (value === "signup" || value === "reset") return value;
-  return "signin";
+  if (value === "signin") return "signin";
+  return routePath(pathname) === "/signup" ? "signup" : "signin";
 }
 
 export default function SignIn() {
-  const meta = metaForPath("/signin");
+  const { pathname } = useLocation();
+  const meta = metaForPath(routePath(pathname));
   useDocumentHead(meta.fullTitle, meta.description, meta.path);
   const { user, ready, configured, signUp, signIn, signInGoogle, sendReset } = useAuth();
   const navigate = useNavigate();
   const [params] = useSearchParams();
-  const [mode, setMode] = useState<Mode>(() => modeFromParam(params.get("mode")));
+  const [mode, setMode] = useState<Mode>(() => modeFromParam(params.get("mode"), pathname));
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [formError, setFormError] = useState("");
@@ -46,6 +53,13 @@ export default function SignIn() {
   }
 
   function validate(): boolean {
+    if (mode === "signup") {
+      const trimmed = name.trim();
+      if (trimmed.length < 2 || trimmed.length > 100) {
+        setFormError("Enter your name, between 2 and 100 characters.");
+        return false;
+      }
+    }
     if (!validEmail()) return false;
     if (password.length < 6) {
       setFormError("Password must be at least 6 characters.");
@@ -62,7 +76,7 @@ export default function SignIn() {
     setFailed("");
     try {
       if (mode === "signup") {
-        await signUp(email.trim(), password);
+        await signUp(email.trim(), password, name.trim());
       } else {
         await signIn(email.trim(), password);
       }
@@ -188,6 +202,15 @@ export default function SignIn() {
             </div>
             <form onSubmit={onSubmit} noValidate className="mt-6">
               <div className="space-y-4">
+                {mode === "signup" && (
+                  <Input
+                    id="signup-name"
+                    label="Your name"
+                    autoComplete="name"
+                    value={name}
+                    onChange={(event) => setName(event.target.value)}
+                  />
+                )}
                 <Input
                   id="signin-email"
                   label="Email"

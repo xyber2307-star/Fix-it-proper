@@ -1,9 +1,7 @@
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
-import type { ConfirmationResult } from "firebase/auth";
 import { friendlyAuthError, useAuth } from "../auth/AuthContext";
-import { confirmPhoneCode, startPhoneSignIn } from "../lib/firebase";
 import Alert from "../components/Alert";
 import Breadcrumbs from "../components/Breadcrumbs";
 import Button from "../components/Button";
@@ -41,11 +39,6 @@ export default function SignIn() {
   const [resetSent, setResetSent] = useState(false);
   const [formBusy, setFormBusy] = useState(false);
   const [googleBusy, setGoogleBusy] = useState(false);
-  const [phone, setPhone] = useState("");
-  const [code, setCode] = useState("");
-  const [codeSent, setCodeSent] = useState(false);
-  const [phoneBusy, setPhoneBusy] = useState(false);
-  const [confirmation, setConfirmation] = useState<ConfirmationResult | null>(null);
 
   useEffect(() => {
     if (ready && user !== null) navigate("/", { replace: true });
@@ -121,44 +114,6 @@ export default function SignIn() {
       setFailed(friendlyAuthError(unknown));
     } finally {
       setGoogleBusy(false);
-    }
-  }
-
-  async function onSendCode(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const trimmed = phone.trim();
-    if (trimmed.length < 7) {
-      setFailed("Enter a phone number with country code, for example +1 555 010 2030.");
-      return;
-    }
-    setPhoneBusy(true);
-    setFailed("");
-    try {
-      const result = await startPhoneSignIn(trimmed);
-      setConfirmation(result);
-      setCodeSent(true);
-    } catch (unknown) {
-      setFailed(friendlyAuthError(unknown));
-    } finally {
-      setPhoneBusy(false);
-    }
-  }
-
-  async function onVerifyCode(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (confirmation === null || code.trim().length < 4) {
-      setFailed("Enter the code from the text message.");
-      return;
-    }
-    setPhoneBusy(true);
-    setFailed("");
-    try {
-      await confirmPhoneCode(confirmation, code.trim());
-      navigate("/");
-    } catch (unknown) {
-      setFailed(friendlyAuthError(unknown));
-    } finally {
-      setPhoneBusy(false);
     }
   }
 
@@ -303,63 +258,6 @@ export default function SignIn() {
             <Button variant="secondary" loading={googleBusy} onClick={() => void onGoogle()}>
               Continue with Google
             </Button>
-          </Card>
-        )}
-        {mode === "signin" && (
-          <Card>
-            <p className="font-semibold">Sign in with phone</p>
-            <p className="mt-1 text-sm text-muted">
-              We text you a code. Message rates from your carrier may apply.
-            </p>
-            {!codeSent ? (
-              <form onSubmit={onSendCode} noValidate className="mt-4">
-                <div className="space-y-4">
-                  <Input
-                    id="signin-phone"
-                    label="Phone number"
-                    type="tel"
-                    autoComplete="tel"
-                    placeholder="+1 555 010 2030"
-                    value={phone}
-                    onChange={(event) => setPhone(event.target.value)}
-                  />
-                  <div>
-                    <Button type="submit" loading={phoneBusy}>
-                      Send code
-                    </Button>
-                  </div>
-                </div>
-              </form>
-            ) : (
-              <form onSubmit={onVerifyCode} noValidate className="mt-4">
-                <div className="space-y-4">
-                  <Input
-                    id="signin-code"
-                    label="Verification code"
-                    inputMode="numeric"
-                    autoComplete="one-time-code"
-                    value={code}
-                    onChange={(event) => setCode(event.target.value)}
-                  />
-                  <div className="flex flex-wrap gap-2">
-                    <Button type="submit" loading={phoneBusy}>
-                      Verify and sign in
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      onClick={() => {
-                        setCodeSent(false);
-                        setCode("");
-                        setConfirmation(null);
-                      }}
-                    >
-                      Use a different number
-                    </Button>
-                  </div>
-                </div>
-              </form>
-            )}
-            <div id="phone-recaptcha" aria-hidden="true" />
           </Card>
         )}
       </div>

@@ -39,7 +39,7 @@ export const PAGE_META: PageMeta[] = [
     path: "/login",
     shortTitle: "Sign in",
     fullTitle: `Sign in - ${BRAND.name}`,
-    description: `Sign in to ${BRAND.name} with email, phone, or Google to run analyses and keep saved reports.`,
+    description: `Sign in to ${BRAND.name} with email or Google to run analyses and keep saved reports.`,
   },
   {
     path: "/signup",

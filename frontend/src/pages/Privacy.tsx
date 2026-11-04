@@ -37,8 +37,8 @@ export default function Privacy() {
       <LegalSection id="accounts" title="Accounts and saved reports">
         <p>
           An account is required to run analyses. Accounts are handled by Firebase
-          Authentication with email and password, phone, or Google sign in. We store
-          your account ID, your name, your email address or phone number, and the
+          Authentication with email and password or Google sign in. We store
+          your account ID, your name, your email address, and the
           dates you joined and last signed in. After your first sign in we ask for a
           business profile (business name, website, industry, city, country, size,
           and role) plus three optional questions. That profile is stored with your

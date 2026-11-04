@@ -109,6 +109,7 @@ async function freshPhoneVerifier(auth: Auth): Promise<RecaptchaVerifier> {
   return phoneVerifier;
 }
 
+// Phone sign in helpers. Parked: the provider is off and no UI calls these yet.
 export async function startPhoneSignIn(phoneNumber: string): Promise<ConfirmationResult> {
   const auth = await loadAuth();
   const { signInWithPhoneNumber } = await import("firebase/auth");

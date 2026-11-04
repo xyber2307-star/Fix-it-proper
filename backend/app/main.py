@@ -1,5 +1,6 @@
 """Fix It Proper backend: analyze, contact, saved reports, locked CORS, contract errors."""
 
+import asyncio
 import logging
 import re
 import time
@@ -8,7 +9,7 @@ from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime, timedelta
 
-from fastapi import Depends, FastAPI, Query, Request
+from fastapi import Depends, FastAPI, File, Form, Query, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -17,7 +18,11 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response
 
+from app.ai.creative import review_creative
 from app.analyze import run_analysis
+from app.analyzers import creative as creative_analyzer
+from app.analyzers.scoring import rank_issues
+from app.analyzers.youtube import CHECKLIST_LIMITATION, analyze_youtube, is_youtube_video_url
 from app.brand import NAME, SLUG
 from app.cache.store import FetchCache
 from app.config import Settings, get_settings
@@ -38,14 +43,20 @@ from app.json_logging import request_id_var, setup_logging
 from app.schemas import (
     AnalyzeRequest,
     AnalyzeResponse,
+    BusinessProfile,
     ContactRequest,
+    CreativePlatform,
+    CreativeResponse,
+    CreativeSource,
+    DataQuality,
     ErrorResponse,
+    ProfileResponse,
     ReportListResponse,
     ReportSummary,
     StatusResponse,
 )
 from app.security.rate_limit import RateLimiter, RateLimitExceeded
-from app.security.url_guard import UrlBlockedError
+from app.security.url_guard import UrlBlockedError, fetch_url_guarded, validate_url
 
 logger = logging.getLogger(SLUG)
 
@@ -192,6 +203,11 @@ def _enforce_contact_rate_limit(request: Request) -> None:
     limiter.check(_client_ip(request))
 
 
+def _enforce_profile_rate_limit(request: Request) -> None:
+    limiter: RateLimiter = request.app.state.profile_limiter
+    limiter.check(_client_ip(request))
+
+
 def _require_db(request: Request) -> Database:
     db: Database = request.app.state.db
     if not db.enabled:
@@ -267,6 +283,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         limit=resolved.contact_rate_limit_per_hour,
         exceeded_message="Too many messages from this address. Try again later.",
     )
+    app.state.profile_limiter = RateLimiter(
+        limit=20,
+        exceeded_message="Too many profile saves from this address. Try again later.",
+    )
     app.state.db = build_database(resolved)
     app.state.fetch_cache = FetchCache(
         ttl_seconds=resolved.fetch_cache_ttl_seconds,
@@ -283,7 +303,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         CORSMiddleware,
         allow_origins=[resolved.frontend_origin],
         allow_credentials=False,
-        allow_methods=["GET", "POST", "DELETE"],
+        allow_methods=["GET", "POST", "PUT", "DELETE"],
         allow_headers=["Authorization", "Content-Type", "X-Request-ID"],
         max_age=600,
     )
@@ -454,12 +474,191 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         await db.reports.delete_by_user(user.uid)
         if user.email:
             await db.contacts.delete_by_email(user.email)
+        await db.profiles.delete(user.uid)
         await db.users.delete(user.uid)
         app_handle = db.app
         assert app_handle is not None
         # Auth deletion runs last so a retry finishes the job idempotently.
         await delete_auth_user(app_handle, user.uid)
         return StatusResponse(status="deleted")
+
+    @app.get("/api/profile", response_model=ProfileResponse)
+    async def _get_profile(
+        request: Request, user: VerifiedUser = Depends(_current_user)
+    ) -> ProfileResponse:
+        db = _require_db(request)
+        doc = await db.profiles.get(user.uid)
+        if doc is None:
+            return ProfileResponse(profile=None, profile_complete=False)
+        return ProfileResponse(profile=doc.profile, profile_complete=True)
+
+    @app.put(
+        "/api/profile",
+        response_model=ProfileResponse,
+        dependencies=[Depends(_enforce_profile_rate_limit)],
+    )
+    async def _put_profile(
+        body: BusinessProfile,
+        request: Request,
+        user: VerifiedUser = Depends(_current_user),
+    ) -> ProfileResponse:
+        try:
+            clean = BusinessProfile.model_validate(
+                {
+                    **body.model_dump(mode="python"),
+                    "business_name": _clean_text(body.business_name),
+                    "industry": _clean_text(body.industry),
+                    "city": _clean_text(body.city),
+                    "country": _clean_text(body.country),
+                    "role": _clean_text(body.role),
+                    "usage_plan": _clean_text(body.usage_plan),
+                    "profession": _clean_text(body.profession),
+                    "referral_source": _clean_text(body.referral_source),
+                    "help_feedback": _clean_text(body.help_feedback),
+                }
+            )
+        except PydanticValidationError:
+            raise BadRequestError(
+                "INVALID_REQUEST",
+                "Profile fields must stay valid after removing markup.",
+            ) from None
+        db = _require_db(request)
+        await db.users.upsert(user.uid, user.email or "", datetime.now(UTC))
+        await db.profiles.save(user.uid, clean, datetime.now(UTC))
+        return ProfileResponse(profile=clean, profile_complete=True)
+
+    @app.post(
+        "/api/creative/analyze",
+        response_model=CreativeResponse,
+        dependencies=[Depends(_enforce_analyze_rate_limit)],
+    )
+    async def _creative_analyze(
+        request: Request,
+        user: VerifiedUser = Depends(_current_user),
+        platform: str = Form(default=""),
+        goal: str = Form(default="", max_length=500),
+        youtube_url: str = Form(default="", max_length=2000),
+        image: UploadFile | None = File(default=None),
+    ) -> CreativeResponse:
+        _ = user
+        request_id = getattr(request.state, "request_id", "") or uuid.uuid4().hex
+        if platform not in creative_analyzer.PLATFORM_SPECS:
+            raise BadRequestError("INVALID_REQUEST", "Unknown platform.")
+        typed_platform: CreativePlatform = platform
+        label = creative_analyzer.PLATFORM_SPECS[typed_platform]["label"]
+        has_image = image is not None and bool(image.filename)
+        has_video = bool(youtube_url.strip())
+        if has_image == has_video:
+            raise BadRequestError(
+                "INVALID_REQUEST", "Send exactly one of an image or a YouTube link."
+            )
+        limitations: list[str] = []
+        if has_image:
+            assert image is not None
+            raw = await image.read(creative_analyzer.MAX_IMAGE_BYTES + 1)
+            if len(raw) > creative_analyzer.MAX_IMAGE_BYTES:
+                raise BadRequestError("IMAGE_TOO_LARGE", "Image is larger than 10 MB.")
+            try:
+                stats = creative_analyzer.measure_image(raw)
+            except ValueError as exc:
+                raise BadRequestError("INVALID_IMAGE", str(exc)) from None
+            found = creative_analyzer.analyze_image(stats, typed_platform)
+            observations = (
+                f"{stats.image_format} {stats.width}x{stats.height}, "
+                f"{stats.byte_size} bytes, brightness {stats.brightness}, "
+                f"contrast {stats.contrast}, edge density {stats.edge_ratio}."
+            )
+            quality: DataQuality = "full"
+            source: CreativeSource = "image"
+        else:
+            target = youtube_url.strip()
+            if not is_youtube_video_url(target):
+                raise BadRequestError("INVALID_URL", "Link must be a YouTube video URL.")
+            normalized = validate_url(target)
+            fetched = await fetch_url_guarded(normalized)
+            if fetched.status_code >= 400:
+                raise BadRequestError("FETCH_BLOCKED", "YouTube page could not be fetched.")
+            youtube = await asyncio.to_thread(analyze_youtube, fetched.text, fetched.final_url)
+            found = youtube.issues
+            data = youtube.data
+            observations = (
+                f"Video title: {data.title or '(missing)'} "
+                f"Description length: {len(data.description or '')} chars. "
+                f"Thumbnail: {'present' if data.thumbnail_url else 'missing'}. "
+                f"Transcript: {data.transcript_status}."
+            )
+            quality = "full" if data.transcript_status != "unknown" else "partial"
+            limitations.append(CHECKLIST_LIMITATION)
+            source = "youtube"
+        ranked = rank_issues(found, [])
+        counts = {"high": 0, "medium": 0, "low": 0}
+        for issue in ranked:
+            counts[issue.severity] += 1
+        top = ranked[0].title if ranked else "no issues found"
+        summary = (
+            f"Found {len(ranked)} issues "
+            f"({counts['high']} high, {counts['medium']} medium, {counts['low']} low). "
+            f"Top fix: {top}."
+        )
+        settings: Settings = request.app.state.settings
+        review, review_limitation = await asyncio.to_thread(
+            review_creative,
+            ranked,
+            platform_label=label,
+            goal=goal.strip(),
+            observations=observations,
+            settings=settings,
+        )
+        if review_limitation is not None:
+            limitations.append(review_limitation)
+        return CreativeResponse(
+            request_id=request_id,
+            source=source,
+            platform=typed_platform,
+            goal=goal.strip(),
+            data_quality=quality,
+            summary=summary,
+            issues=ranked,
+            review=review,
+            limitations=limitations,
+        )
+
+    @app.post(
+        "/api/creative/improve",
+        dependencies=[Depends(_enforce_analyze_rate_limit)],
+        response_class=Response,
+    )
+    async def _creative_improve(
+        request: Request,
+        user: VerifiedUser = Depends(_current_user),
+        headline: str = Form(default="", max_length=90),
+        subtext: str = Form(default="", max_length=140),
+        cta: str = Form(default="", max_length=40),
+        image: UploadFile | None = File(default=None),
+    ) -> Response:
+        _ = user
+        if image is None or not image.filename:
+            raise BadRequestError("INVALID_REQUEST", "An image file is required.")
+        if not headline.strip():
+            raise BadRequestError("INVALID_REQUEST", "A headline is required.")
+        raw = await image.read(creative_analyzer.MAX_IMAGE_BYTES + 1)
+        if len(raw) > creative_analyzer.MAX_IMAGE_BYTES:
+            raise BadRequestError("IMAGE_TOO_LARGE", "Image is larger than 10 MB.")
+        try:
+            png = await asyncio.to_thread(
+                creative_analyzer.render_improved,
+                raw,
+                headline.strip(),
+                subtext.strip(),
+                cta.strip(),
+            )
+        except ValueError as exc:
+            raise BadRequestError("INVALID_IMAGE", str(exc)) from None
+        return Response(
+            content=png,
+            media_type="image/png",
+            headers={"Content-Disposition": 'attachment; filename="improved-creative.png"'},
+        )
 
     return app
 

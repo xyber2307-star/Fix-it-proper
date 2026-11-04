@@ -1,5 +1,6 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import type { ReactNode } from "react";
+import { fetchProfile } from "../lib/api";
 import {
   currentUserToken,
   friendlyAuthError,
@@ -12,17 +13,22 @@ import {
   watchAuthState,
 } from "../lib/firebase";
 import type { AuthUser } from "../lib/firebase";
+import type { BusinessProfile } from "../types/api";
 
 interface AuthContextValue {
   user: AuthUser | null;
   ready: boolean;
   configured: boolean;
+  profile: BusinessProfile | null;
+  profileComplete: boolean;
+  profileLoaded: boolean;
   signUp: (email: string, password: string, name: string) => Promise<AuthUser>;
   signIn: (email: string, password: string) => Promise<AuthUser>;
   signInGoogle: () => Promise<AuthUser>;
   sendReset: (email: string) => Promise<void>;
   signOut: () => Promise<void>;
   getToken: () => Promise<string | null>;
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -30,7 +36,42 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [ready, setReady] = useState(false);
+  const [profile, setProfile] = useState<BusinessProfile | null>(null);
+  const [profileComplete, setProfileComplete] = useState(false);
+  const [profileLoaded, setProfileLoaded] = useState(false);
   const configured = isFirebaseConfigured();
+
+  const refreshProfile = useCallback(async () => {
+    try {
+      const token = await currentUserToken();
+      if (token === null) {
+        setProfile(null);
+        setProfileComplete(false);
+        setProfileLoaded(true);
+        return;
+      }
+      const response = await fetchProfile(token);
+      setProfile(response.profile);
+      setProfileComplete(response.profile_complete && response.profile !== null);
+      setProfileLoaded(true);
+    } catch {
+      setProfile(null);
+      setProfileComplete(false);
+      setProfileLoaded(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!ready) return;
+    if (user === null) {
+      setProfile(null);
+      setProfileComplete(false);
+      setProfileLoaded(true);
+      return;
+    }
+    setProfileLoaded(false);
+    void refreshProfile();
+  }, [ready, user, refreshProfile]);
 
   useEffect(() => {
     if (!configured) {
@@ -94,12 +135,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     user,
     ready,
     configured,
+    profile,
+    profileComplete,
+    profileLoaded,
     signUp: wrappedSignUp,
     signIn: wrappedSignIn,
     signInGoogle: wrappedSignInGoogle,
     sendReset: sendPasswordReset,
     signOut: wrappedSignOut,
     getToken: currentUserToken,
+    refreshProfile,
   };
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

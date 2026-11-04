@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import Any, Literal
 
-from app.schemas import DataQuality, StrictModel
+from app.schemas import BusinessProfile, DataQuality, StrictModel
 
 ContactStatus = Literal["new", "read", "replied"]
 
@@ -29,6 +29,14 @@ class UserDoc(StrictModel):
     email: str
     created_at: datetime
     last_seen_at: datetime
+
+
+class ProfileDoc(StrictModel):
+    """Onboarding profile keyed by uid. Mirrors BusinessProfile plus updated_at."""
+
+    uid: str
+    profile: BusinessProfile
+    updated_at: datetime
 
 
 class ReportDoc(StrictModel):

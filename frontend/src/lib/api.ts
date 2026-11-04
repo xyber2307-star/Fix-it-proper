@@ -1,8 +1,11 @@
 import type {
   AnalyzeResponse,
+  BusinessProfile,
   ContactRequest,
+  CreativeResponse,
   DataQuality,
   ErrorResponse,
+  ProfileResponse,
   ReportListResponse,
   StatusResponse,
 } from "../types/api";
@@ -126,7 +129,7 @@ export async function analyzeUrl(
 }
 
 interface ApiOptions {
-  method: "GET" | "POST" | "DELETE";
+  method: "GET" | "POST" | "PUT" | "DELETE";
   token?: string;
   body?: unknown;
   signal?: AbortSignal;
@@ -195,4 +198,121 @@ export async function deleteReport(token: string, id: string): Promise<StatusRes
 
 export async function deleteAccount(token: string): Promise<StatusResponse> {
   return requestJson("/api/account", { method: "DELETE", token }, isStatusResponse);
+}
+
+function isProfileResponse(value: unknown): value is ProfileResponse {
+  if (typeof value !== "object" || value === null) return false;
+  const record = value as Record<string, unknown>;
+  if (typeof record.profile_complete !== "boolean") return false;
+  if (record.profile === null) return true;
+  if (typeof record.profile !== "object" || record.profile === null) return false;
+  const profile = record.profile as Record<string, unknown>;
+  return (
+    typeof profile.business_name === "string" &&
+    typeof profile.website === "string" &&
+    typeof profile.industry === "string" &&
+    typeof profile.city === "string" &&
+    typeof profile.country === "string" &&
+    typeof profile.size === "string" &&
+    typeof profile.role === "string"
+  );
+}
+
+export async function fetchProfile(token: string): Promise<ProfileResponse> {
+  return requestJson("/api/profile", { method: "GET", token }, isProfileResponse);
+}
+
+export async function saveProfile(
+  token: string,
+  profile: BusinessProfile,
+): Promise<ProfileResponse> {
+  return requestJson("/api/profile", { method: "PUT", token, body: profile }, isProfileResponse);
+}
+
+function isCreativeResponse(value: unknown): value is CreativeResponse {
+  if (typeof value !== "object" || value === null) return false;
+  const record = value as Record<string, unknown>;
+  const quality: unknown = record.data_quality;
+  const qualities: DataQuality[] = ["full", "partial", "og_only"];
+  return (
+    typeof record.request_id === "string" &&
+    (record.source === "image" || record.source === "youtube") &&
+    typeof record.platform === "string" &&
+    typeof record.summary === "string" &&
+    Array.isArray(record.issues) &&
+    Array.isArray(record.limitations) &&
+    qualities.some((entry) => entry === quality)
+  );
+}
+
+async function requestForm<T>(
+  path: string,
+  token: string,
+  form: FormData,
+  signal: AbortSignal,
+  isExpected: (value: unknown) => value is T,
+): Promise<T> {
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE}${path}`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: form,
+      signal,
+    });
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") throw error;
+    throw networkError();
+  }
+  const payload: unknown = await response.json().catch(() => null);
+  if (!response.ok) throw errorFromPayload(response, payload);
+  if (!isExpected(payload)) throw badResponse(response.status);
+  return payload;
+}
+
+export async function analyzeCreative(
+  token: string,
+  input: {
+    platform: string;
+    goal: string;
+    youtubeUrl: string;
+    image: File | null;
+  },
+  signal: AbortSignal,
+): Promise<CreativeResponse> {
+  const form = new FormData();
+  form.set("platform", input.platform);
+  form.set("goal", input.goal);
+  form.set("youtube_url", input.youtubeUrl);
+  if (input.image !== null) form.set("image", input.image);
+  return requestForm("/api/creative/analyze", token, form, signal, isCreativeResponse);
+}
+
+export async function improveCreative(
+  token: string,
+  input: { image: File; headline: string; subtext: string; cta: string },
+  signal: AbortSignal,
+): Promise<Blob> {
+  const form = new FormData();
+  form.set("image", input.image);
+  form.set("headline", input.headline);
+  form.set("subtext", input.subtext);
+  form.set("cta", input.cta);
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE}/api/creative/improve`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: form,
+      signal,
+    });
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") throw error;
+    throw networkError();
+  }
+  if (!response.ok) {
+    const payload: unknown = await response.json().catch(() => null);
+    throw errorFromPayload(response, payload);
+  }
+  return response.blob();
 }

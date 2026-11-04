@@ -117,3 +117,87 @@ class ReportSummary(StrictModel):
 
 class ReportListResponse(StrictModel):
     reports: list[ReportSummary]
+
+
+BusinessSize = Literal["Just me", "2 to 10", "11 to 50", "51 to 200", "Over 200"]
+
+
+class BusinessProfile(StrictModel):
+    """Onboarding profile. Required fields are always present; optionals default empty."""
+
+    business_name: str = Field(min_length=2, max_length=120)
+    website: str = Field(min_length=4, max_length=500)
+    industry: str = Field(min_length=2, max_length=80)
+    city: str = Field(min_length=2, max_length=80)
+    country: str = Field(min_length=2, max_length=80)
+    size: BusinessSize
+    role: str = Field(min_length=2, max_length=80)
+    usage_plan: str = Field(default="", max_length=500)
+    profession: str = Field(default="", max_length=120)
+    referral_source: str = Field(default="", max_length=120)
+    help_feedback: str = Field(default="", max_length=1000)
+
+    @field_validator(
+        "business_name",
+        "website",
+        "industry",
+        "city",
+        "country",
+        "role",
+        "usage_plan",
+        "profession",
+        "referral_source",
+        "help_feedback",
+        mode="before",
+    )
+    @classmethod
+    def _strip(cls, value: Any) -> Any:
+        if isinstance(value, str):
+            return value.strip()
+        return value
+
+    @field_validator("website")
+    @classmethod
+    def _website_must_be_http(cls, value: str) -> str:
+        candidate = value if "://" in value else f"https://{value}"
+        lowered = candidate.lower()
+        if not (lowered.startswith("http://") or lowered.startswith("https://")):
+            raise ValueError("website must start with http:// or https://")
+        host = candidate.split("://", 1)[1].split("/", 1)[0]
+        if "." not in host or " " in host:
+            raise ValueError("website must include a domain name")
+        return candidate
+
+
+class ProfileResponse(StrictModel):
+    profile: BusinessProfile | None
+    profile_complete: bool
+
+
+CreativeSource = Literal["image", "youtube"]
+CreativePlatform = Literal[
+    "instagram_post", "instagram_story", "facebook_post", "x_post", "youtube_thumbnail"
+]
+
+
+class CreativeReview(StrictModel):
+    """AI review output. Deterministic checks run first; this only explains."""
+
+    label: RewriteLabel
+    summary: str
+    changes: list[str] = Field(min_length=1, max_length=6)
+    suggested_headline: str
+    suggested_subtext: str
+    suggested_cta: str
+
+
+class CreativeResponse(StrictModel):
+    request_id: str
+    source: CreativeSource
+    platform: CreativePlatform
+    goal: str
+    data_quality: DataQuality
+    summary: str
+    issues: list[Issue]
+    review: CreativeReview | None
+    limitations: list[str]

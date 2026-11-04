@@ -15,6 +15,7 @@ from google.cloud.firestore import Client
 from app.brand import SLUG
 from app.config import Settings
 from app.db.repositories.contact_messages import ContactMessageRepository
+from app.db.repositories.profiles import ProfileRepository
 from app.db.repositories.reports import ReportRepository
 from app.db.repositories.users import UserRepository
 
@@ -32,6 +33,7 @@ class Database:
         self.contacts = ContactMessageRepository(client)
         self.users = UserRepository(client)
         self.reports = ReportRepository(client)
+        self.profiles = ProfileRepository(client)
 
     @property
     def enabled(self) -> bool:

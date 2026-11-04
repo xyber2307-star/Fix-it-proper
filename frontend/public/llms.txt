@@ -6,19 +6,24 @@ each one, plus AI rewrite suggestions labeled for testing.
 
 ## Key pages
 
-- Home and analyzer (/): paste a URL, run deterministic SEO, technical, and
-  accessibility checks plus Google PageSpeed, and read the ranked fix list.
+- Home and analyzer (/): after sign in and a one time business profile, paste a
+  URL, run deterministic SEO, technical, and accessibility checks plus Google
+  PageSpeed, and read the ranked fix list.
 - Privacy Policy (/privacy): what submitted URLs, fetched content, logs, and caches
   are kept, and the third parties used (Google PageSpeed Insights, Groq, Firebase).
 - Terms and Conditions (/terms): acceptable use, AI suggestion disclaimer,
   availability, and liability.
 - Contact (/contact): reach the operator by email or through the contact form.
-- Sign in (/signin) and Saved reports (/saved): optional accounts keep a 30-day
-  report history.
+- Sign in (/login) and Saved reports (/saved): accounts keep a 30-day report
+  history. A business profile step (/onboarding) is required after first sign in.
+- Creative review (/creative): uploaded ad images and public YouTube links get
+  deterministic checks, an AI review, and an improved version with text overlays.
+- Learn SEO basics (/learn/seo): what each SEO check means and how to fix it.
+- Settings (/settings): edit the business profile, sign out, or delete the account.
 
 ## Notes for automated readers
 
 - Results are checklists of found problems, not predictions of traffic or rankings.
 - Public websites and landing pages only. Social media and ad platforms are refused.
-- One page is analyzed per report. Sign in is optional; signed in reports are saved.
+- One page is analyzed per report. Sign in is required; reports are saved.
 - Contact: xyber2307@gmail.com

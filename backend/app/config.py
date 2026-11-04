@@ -16,7 +16,7 @@ class Settings(BaseSettings):
 
     frontend_origin: str = "http://localhost:5173"
     groq_api_key: str = ""
-    groq_model: str = "llama-3.3-70b-versatile"
+    groq_model: str = "openai/gpt-oss-120b"
     pagespeed_api_key: str = ""
     rate_limit_per_hour: int = Field(default=10, ge=1)
     log_level: LogLevel = "INFO"

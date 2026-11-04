@@ -29,6 +29,13 @@ _M = TypeVar("_M", bound=BaseModel)
 
 _NO_KEY = "AI explanations and rewrites unavailable (no API key configured)."
 _FAILED = "AI output failed validation; showing deterministic text with no rewrites."
+_API_FAILED = "AI request failed ({}); showing deterministic text with no rewrites."
+_API_REASONS = {
+    "timeout": "the request timed out",
+    "transport": "the API call failed; check the key and model name",
+    "malformed": "the API returned invalid JSON",
+    "empty": "the API returned no content",
+}
 _NO_CONTENT = "Rewrites unavailable (page content missing)."
 _NO_SURVIVORS = "AI rewrites unavailable (no variants passed quality checks)."
 
@@ -205,9 +212,12 @@ def enhance_issues(
                         label="AI generated, test before using",
                     )
                 )
-    except (AIError, ValidationError) as exc:
-        reason = exc.kind if isinstance(exc, AIError) else "validation"
-        logger.info("ai fallback", extra={"reason": reason})
+    except AIError as exc:
+        logger.info("ai fallback", extra={"reason": exc.kind})
+        detail = _API_REASONS.get(exc.kind, "the API call failed")
+        return AIResult(issues=list(issues), rewrites=[], limitations=[_API_FAILED.format(detail)])
+    except ValidationError:
+        logger.info("ai fallback", extra={"reason": "validation"})
         return AIResult(issues=list(issues), rewrites=[], limitations=[_FAILED])
     merged = _merge_explanations(issues, {issue.id for issue in top_five}, explanations)
     limitations: list[str] = []

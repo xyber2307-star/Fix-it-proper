@@ -29,7 +29,7 @@ def test_defaults_match_dev_convention(clean_env):
     settings = Settings()
     assert settings.frontend_origin == "http://localhost:5173"
     assert settings.groq_api_key == ""
-    assert settings.groq_model == "llama-3.3-70b-versatile"
+    assert settings.groq_model == "openai/gpt-oss-120b"
     assert settings.pagespeed_api_key == ""
     assert settings.rate_limit_per_hour == 10
     assert settings.log_level == "INFO"

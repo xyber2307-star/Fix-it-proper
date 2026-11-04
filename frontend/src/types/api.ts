@@ -102,3 +102,54 @@ export interface ReportSummary {
 export interface ReportListResponse {
   reports: ReportSummary[];
 }
+
+export type BusinessSize = "Just me" | "2 to 10" | "11 to 50" | "51 to 200" | "Over 200";
+
+export interface BusinessProfile {
+  business_name: string;
+  website: string;
+  industry: string;
+  city: string;
+  country: string;
+  size: BusinessSize;
+  role: string;
+  usage_plan: string;
+  profession: string;
+  referral_source: string;
+  help_feedback: string;
+}
+
+export interface ProfileResponse {
+  profile: BusinessProfile | null;
+  profile_complete: boolean;
+}
+
+export type CreativeSource = "image" | "youtube";
+
+export type CreativePlatform =
+  | "instagram_post"
+  | "instagram_story"
+  | "facebook_post"
+  | "x_post"
+  | "youtube_thumbnail";
+
+export interface CreativeReview {
+  label: RewriteLabel;
+  summary: string;
+  changes: string[];
+  suggested_headline: string;
+  suggested_subtext: string;
+  suggested_cta: string;
+}
+
+export interface CreativeResponse {
+  request_id: string;
+  source: CreativeSource;
+  platform: CreativePlatform;
+  goal: string;
+  data_quality: DataQuality;
+  summary: string;
+  issues: Issue[];
+  review: CreativeReview | null;
+  limitations: string[];
+}

@@ -3,6 +3,11 @@
 /privacy /privacy.html 200
 /terms /terms.html 200
 /contact /contact.html 200
-/signin /signin.html 200
+/login /login.html 200
+/signin /login 301
 /signup /signup.html 200
+/onboarding /onboarding.html 200
 /saved /saved.html 200
+/creative /creative.html 200
+/learn/seo /learn/seo.html 200
+/settings /settings.html 200

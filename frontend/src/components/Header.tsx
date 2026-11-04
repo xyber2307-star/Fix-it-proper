@@ -6,6 +6,11 @@ import { BRAND } from "../config/brand";
 import Button from "./Button";
 import Container from "./Container";
 
+const DISCOVER_ITEMS = [
+  { to: "/creative", label: "Creative review" },
+  { to: "/learn/seo", label: "Learn SEO" },
+];
+
 const NAV_ITEMS = [
   { to: "/privacy", label: "Privacy Policy" },
   { to: "/terms", label: "Terms and Conditions" },
@@ -22,8 +27,8 @@ export default function Header() {
   const { user, configured, signOut } = useAuth();
   const items =
     user !== null
-      ? [{ to: "/saved", label: "Saved reports" }, ...NAV_ITEMS]
-      : NAV_ITEMS;
+      ? [{ to: "/saved", label: "Saved reports" }, ...DISCOVER_ITEMS, ...NAV_ITEMS]
+      : [...DISCOVER_ITEMS, ...NAV_ITEMS];
 
   async function onSignOut() {
     setSignOutError("");
@@ -105,13 +110,19 @@ export default function Header() {
                 <span className="max-w-[180px] truncate text-sm text-muted">
                   {user.displayName ?? user.email ?? "Signed in"}
                 </span>
+                <NavLink
+                  to="/settings"
+                  className="inline-flex min-h-[44px] items-center font-semibold text-ink transition-colors duration-150 hover:text-accent"
+                >
+                  Settings
+                </NavLink>
                 <Button variant="secondary" onClick={() => void onSignOut()}>
                   Sign out
                 </Button>
               </span>
             ) : (
               <NavLink
-                to="/signin"
+                to="/login"
                 className="inline-flex min-h-[44px] items-center font-semibold text-ink transition-colors duration-150 hover:text-accent"
               >
                 Sign in
@@ -160,10 +171,20 @@ export default function Header() {
               {configured && user === null && (
                 <li>
                   <NavLink
-                    to="/signin"
+                    to="/login"
                     className="flex min-h-[44px] items-center font-semibold text-ink transition-colors duration-150 hover:text-accent"
                   >
                     Sign in
+                  </NavLink>
+                </li>
+              )}
+              {configured && user !== null && (
+                <li>
+                  <NavLink
+                    to="/settings"
+                    className="flex min-h-[44px] items-center font-semibold text-ink transition-colors duration-150 hover:text-accent"
+                  >
+                    Settings
                   </NavLink>
                 </li>
               )}

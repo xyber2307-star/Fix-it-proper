@@ -200,12 +200,16 @@ def test_app_exposes_expected_routes(app_settings):
     by_path: dict[str, list[str]] = {}
     for route in app.routes:
         assert isinstance(route, Route)
-        by_path[route.path] = sorted(route.methods or [])
+        merged = sorted(set(by_path.get(route.path, [])) | set(route.methods or []))
+        by_path[route.path] = merged
     assert by_path == {
         "/api/account": ["DELETE"],
         "/api/analyze": ["POST"],
         "/api/contact": ["POST"],
+        "/api/creative/analyze": ["POST"],
+        "/api/creative/improve": ["POST"],
         "/api/health": ["GET"],
+        "/api/profile": ["GET", "PUT"],
         "/api/reports": ["GET"],
         "/api/reports/{report_id}": ["DELETE"],
     }

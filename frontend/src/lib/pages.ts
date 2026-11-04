@@ -36,22 +36,46 @@ export const PAGE_META: PageMeta[] = [
     description: `Contact the ${BRAND.name} operator by email or through the contact form.`,
   },
   {
-    path: "/signin",
+    path: "/login",
     shortTitle: "Sign in",
     fullTitle: `Sign in - ${BRAND.name}`,
-    description: `Sign in to ${BRAND.name} with email or Google to keep a history of saved reports.`,
+    description: `Sign in to ${BRAND.name} with email, phone, or Google to run analyses and keep saved reports.`,
   },
   {
     path: "/signup",
     shortTitle: "Create account",
     fullTitle: `Create account - ${BRAND.name}`,
-    description: `Create a ${BRAND.name} account with email or Google to save website reports for 30 days.`,
+    description: `Create a ${BRAND.name} account to run website analyses and save reports for 30 days.`,
+  },
+  {
+    path: "/onboarding",
+    shortTitle: "Your business",
+    fullTitle: `Tell us about your business - ${BRAND.name}`,
+    description: `Add your business profile once so ${BRAND.name} can tailor analysis suggestions to your business.`,
   },
   {
     path: "/saved",
     shortTitle: "Saved reports",
     fullTitle: `Saved reports - ${BRAND.name}`,
     description: `Your saved ${BRAND.name} website reports. Review past results or delete them.`,
+  },
+  {
+    path: "/creative",
+    shortTitle: "Creative review",
+    fullTitle: `Creative review - ${BRAND.name}`,
+    description: `Upload an ad image or paste a YouTube link for deterministic creative checks and an AI review.`,
+  },
+  {
+    path: "/learn/seo",
+    shortTitle: "Learn SEO basics",
+    fullTitle: `Learn SEO basics - ${BRAND.name}`,
+    description: `What each ${BRAND.name} SEO check means and how to fix it, in plain language.`,
+  },
+  {
+    path: "/settings",
+    shortTitle: "Settings",
+    fullTitle: `Settings - ${BRAND.name}`,
+    description: `Edit your ${BRAND.name} business profile, sign out, or delete your account.`,
   },
 ];
 

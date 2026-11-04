@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { ArrowRight, LoaderCircle } from "lucide-react";
 import exampleFixture from "../../../backend/tests/fixtures/full_success.json";
 import { useAuth } from "../auth/AuthContext";
@@ -96,7 +96,8 @@ export default function Home() {
   const [error, setError] = useState<AnalyzeError | null>(null);
   const [elapsed, setElapsed] = useState(0);
   const reportHeading = useRef<HTMLHeadingElement>(null);
-  const { user, configured, getToken } = useAuth();
+  const { user, ready, configured, getToken, profileComplete, profileLoaded } = useAuth();
+  const canAnalyze = user !== null && profileComplete;
   const controllerRef = useRef<AbortController | null>(null);
   const abortReason = useRef<"user" | "timeout" | null>(null);
 
@@ -182,6 +183,10 @@ export default function Home() {
     void runAnalysis(url.trim());
   }
 
+  if (ready && user !== null && profileLoaded && !profileComplete) {
+    return <Navigate to="/onboarding" replace />;
+  }
+
   return (
     <Container className="py-10">
       <h1 className="font-serif text-3xl font-semibold leading-tight">
@@ -192,51 +197,58 @@ export default function Home() {
         ranked fix list with evidence, plus rewrite suggestions to test.
       </p>
 
-      <Card className="mt-6">
-        <form onSubmit={onSubmit} noValidate>
-          <Input
-            id="website-url"
-            label="Website URL"
-            type="url"
-            autoComplete="url"
-            inputMode="url"
-            placeholder="https://example.com/"
-            value={url}
-            onChange={(event) => setUrl(event.target.value)}
-            error={inputError}
-            hint="Public websites and landing pages only."
-          />
-          <details className="mt-4">
-            <summary className="inline-block min-h-[44px] cursor-pointer py-3 font-semibold text-accent">
-              Brand voice (optional)
-            </summary>
+      {canAnalyze ? (
+        <Card className="mt-6">
+          <form onSubmit={onSubmit} noValidate>
             <Input
-              id="brand-voice"
-              label="How should suggestions sound?"
-              placeholder="Friendly neighborhood plumber"
-              value={brandVoice}
-              onChange={(event) => setBrandVoice(event.target.value)}
-              hint="Plain words the AI uses as context for rewrites."
+              id="website-url"
+              label="Website URL"
+              type="url"
+              autoComplete="url"
+              inputMode="url"
+              placeholder="https://example.com/"
+              value={url}
+              onChange={(event) => setUrl(event.target.value)}
+              error={inputError}
+              hint="Public websites and landing pages only."
             />
-          </details>
-          <div className="mt-4">
-            <Button type="submit" loading={loading}>
-              {loading ? "Analyzing…" : "Analyze website"}
-              {!loading && <ArrowRight className="size-4" aria-hidden="true" />}
-            </Button>
-          </div>
-          {user !== null && (
+            <details className="mt-4">
+              <summary className="inline-block min-h-[44px] cursor-pointer py-3 font-semibold text-accent">
+                Brand voice (optional)
+              </summary>
+              <Input
+                id="brand-voice"
+                label="How should suggestions sound?"
+                placeholder="Friendly neighborhood plumber"
+                value={brandVoice}
+                onChange={(event) => setBrandVoice(event.target.value)}
+                hint="Plain words the AI uses as context for rewrites."
+              />
+            </details>
+            <div className="mt-4">
+              <Button type="submit" loading={loading}>
+                {loading ? "Analyzing…" : "Analyze website"}
+                {!loading && <ArrowRight className="size-4" aria-hidden="true" />}
+              </Button>
+            </div>
             <p className="mt-3 text-sm text-muted">
-              Signed in as {user.displayName ?? user.email ?? "your account"}. This
+              Signed in as {user?.displayName ?? user?.email ?? "your account"}. This
               report will be saved to your history.
             </p>
-          )}
-          {user === null && configured && (
+          </form>
+        </Card>
+      ) : (
+        <Card className="mt-6">
+          <p className="font-serif text-xl font-semibold">Sign in to run an analysis</p>
+          <p className="mt-1 text-sm text-muted">
+            An account keeps your reports saved for 30 days. It takes a minute.
+          </p>
+          {configured ? (
             <>
               <div className="mt-4 flex flex-wrap gap-2">
                 <Link
-                  to="/signin"
-                  className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md border border-line bg-surface px-5 font-semibold text-ink transition-colors duration-150 hover:border-muted"
+                  to="/login"
+                  className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md bg-accent px-5 font-semibold text-white transition-colors duration-150 hover:bg-accent-strong"
                 >
                   Sign in
                 </Link>
@@ -247,13 +259,14 @@ export default function Home() {
                   Get Started
                 </Link>
               </div>
-              <p className="mt-2 text-sm text-muted">
-                Keep a history of your reports, saved for 30 days.
-              </p>
             </>
+          ) : (
+            <p className="mt-4 text-sm font-semibold">
+              Sign in is not configured on this site yet.
+            </p>
           )}
-        </form>
-      </Card>
+        </Card>
+      )}
 
       {loading && (
         <Card className="mt-6">

@@ -2,7 +2,7 @@
 // these functions, so it lands in its own chunk and never grows the
 // initial JS bundle. Everything returns null or throws FirebaseNotConfigured
 // when the VITE_FIREBASE_* keys are missing.
-import type { Auth, User } from "firebase/auth";
+import type { Auth, ConfirmationResult, RecaptchaVerifier, User } from "firebase/auth";
 
 export interface AuthUser {
   uid: string;
@@ -93,6 +93,38 @@ export async function signInWithGoogle(): Promise<AuthUser> {
   return toAuthUser(credential.user);
 }
 
+let phoneVerifier: RecaptchaVerifier | null = null;
+
+async function freshPhoneVerifier(auth: Auth): Promise<RecaptchaVerifier> {
+  const { RecaptchaVerifier: Verifier } = await import("firebase/auth");
+  if (phoneVerifier !== null) {
+    try {
+      phoneVerifier.clear();
+    } catch {
+      // A cleared verifier throws; a new one is built below.
+    }
+    phoneVerifier = null;
+  }
+  phoneVerifier = new Verifier(auth, "phone-recaptcha", { size: "invisible" });
+  return phoneVerifier;
+}
+
+export async function startPhoneSignIn(phoneNumber: string): Promise<ConfirmationResult> {
+  const auth = await loadAuth();
+  const { signInWithPhoneNumber } = await import("firebase/auth");
+  const verifier = await freshPhoneVerifier(auth);
+  return signInWithPhoneNumber(auth, phoneNumber, verifier);
+}
+
+export async function confirmPhoneCode(
+  confirmation: ConfirmationResult,
+  code: string,
+): Promise<AuthUser> {
+  const credential = await confirmation.confirm(code);
+  const auth = await loadAuth();
+  return toAuthUser(auth.currentUser ?? credential.user);
+}
+
 export async function sendPasswordReset(email: string): Promise<void> {
   const auth = await loadAuth();
   const { sendPasswordResetEmail } = await import("firebase/auth");
@@ -138,6 +170,16 @@ export function friendlyAuthError(error: unknown): string {
       return "Enter a valid email address.";
     case "auth/popup-closed-by-user":
       return "The Google sign in window was closed before finishing.";
+    case "auth/invalid-phone-number":
+    case "auth/missing-phone-number":
+      return "Enter a phone number with country code, for example +1 555 010 2030.";
+    case "auth/missing-verification-code":
+    case "auth/invalid-verification-code":
+      return "That code is wrong or expired. Request a new one and try again.";
+    case "auth/captcha-check-failed":
+      return "The spam check failed. Reload the page and try again.";
+    case "auth/quota-exceeded":
+      return "Too many codes were sent. Wait a while and try again.";
     case "auth/network-request-failed":
       return "Network error. Check your connection and try again.";
     case "auth/operation-not-allowed":

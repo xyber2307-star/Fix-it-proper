@@ -1,5 +1,7 @@
 import { Suspense, lazy, useEffect } from "react";
-import { Route, Routes, useLocation } from "react-router-dom";
+import type { ReactNode } from "react";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
+import { useAuth } from "./auth/AuthContext";
 import Container from "./components/Container";
 import Footer from "./components/Footer";
 import Header from "./components/Header";
@@ -11,7 +13,25 @@ const Terms = lazy(() => import("./pages/Terms"));
 const Contact = lazy(() => import("./pages/Contact"));
 const SignIn = lazy(() => import("./pages/SignIn"));
 const Saved = lazy(() => import("./pages/Saved"));
+const Onboarding = lazy(() => import("./pages/Onboarding"));
+const Settings = lazy(() => import("./pages/Settings"));
+const Creative = lazy(() => import("./pages/Creative"));
+const LearnSeo = lazy(() => import("./pages/LearnSeo"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+
+function RequireAuth({ children }: { children: ReactNode }) {
+  const { user, ready, configured } = useAuth();
+  if (!ready) return null;
+  if (user === null || !configured) return <Navigate to="/login" replace />;
+  return <>{children}</>;
+}
+
+function RequireProfile({ children }: { children: ReactNode }) {
+  const { profileComplete, profileLoaded } = useAuth();
+  if (!profileLoaded) return null;
+  if (!profileComplete) return <Navigate to="/onboarding" replace />;
+  return <>{children}</>;
+}
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -43,12 +63,86 @@ export default function Site() {
             <Route path="/terms.html" element={<Terms />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/contact.html" element={<Contact />} />
-            <Route path="/signin" element={<SignIn />} />
-            <Route path="/signin.html" element={<SignIn />} />
+            <Route path="/login" element={<SignIn />} />
+            <Route path="/login.html" element={<SignIn />} />
+            <Route path="/signin" element={<Navigate to="/login" replace />} />
+            <Route path="/signin.html" element={<Navigate to="/login" replace />} />
             <Route path="/signup" element={<SignIn />} />
             <Route path="/signup.html" element={<SignIn />} />
-            <Route path="/saved" element={<Saved />} />
-            <Route path="/saved.html" element={<Saved />} />
+            <Route
+              path="/onboarding"
+              element={
+                <RequireAuth>
+                  <Onboarding />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/onboarding.html"
+              element={
+                <RequireAuth>
+                  <Onboarding />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/saved"
+              element={
+                <RequireAuth>
+                  <RequireProfile>
+                    <Saved />
+                  </RequireProfile>
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/saved.html"
+              element={
+                <RequireAuth>
+                  <RequireProfile>
+                    <Saved />
+                  </RequireProfile>
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/creative"
+              element={
+                <RequireAuth>
+                  <RequireProfile>
+                    <Creative />
+                  </RequireProfile>
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/creative.html"
+              element={
+                <RequireAuth>
+                  <RequireProfile>
+                    <Creative />
+                  </RequireProfile>
+                </RequireAuth>
+              }
+            />
+            <Route path="/learn/seo" element={<LearnSeo />} />
+            <Route path="/learn/seo.html" element={<LearnSeo />} />
+            <Route
+              path="/settings"
+              element={
+                <RequireAuth>
+                  <Settings />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/settings.html"
+              element={
+                <RequireAuth>
+                  <Settings />
+                </RequireAuth>
+              }
+            />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>

@@ -1,12 +1,20 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import type { FormEvent } from "react";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import Alert from "../components/Alert";
 import Breadcrumbs from "../components/Breadcrumbs";
 import Button from "../components/Button";
 import Card from "../components/Card";
 import Container from "../components/Container";
-import { AnalyzeError, deleteAccount, deleteReport, fetchReports } from "../lib/api";
+import Textarea from "../components/Textarea";
+import {
+  AnalyzeError,
+  deleteAccount,
+  deleteReport,
+  fetchReports,
+  saveProfile,
+} from "../lib/api";
 import { useDocumentHead } from "../lib/head";
 import { metaForPath } from "../lib/pages";
 import type { ReportSummary } from "../types/api";
@@ -23,9 +31,13 @@ function formatDate(iso: string): string {
 export default function Saved() {
   const meta = metaForPath("/saved");
   useDocumentHead(meta.fullTitle, meta.description, meta.path);
-  const { user, ready, configured, getToken, signOut } = useAuth();
+  const { user, ready, configured, getToken, signOut, profile, refreshProfile } =
+    useAuth();
   const navigate = useNavigate();
   const [reports, setReports] = useState<ReportSummary[] | null>(null);
+  const [feedback, setFeedback] = useState("");
+  const [feedbackSaved, setFeedbackSaved] = useState(false);
+  const [feedbackBusy, setFeedbackBusy] = useState(false);
   const [loadError, setLoadError] = useState("");
   const [loadErrorCode, setLoadErrorCode] = useState("");
 
@@ -89,6 +101,25 @@ export default function Saved() {
     }
   }
 
+  async function onFeedback(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (profile === null || feedback.trim() === "") return;
+    setFeedbackBusy(true);
+    clearError();
+    try {
+      const token = await getToken();
+      if (token === null) throw new Error("missing token");
+      await saveProfile(token, { ...profile, help_feedback: feedback.trim() });
+      await refreshProfile();
+      setFeedbackSaved(true);
+      setNotice("Thanks, your feedback was saved.");
+    } catch (unknown) {
+      failWith(unknown, "Could not save your feedback. Try again.");
+    } finally {
+      setFeedbackBusy(false);
+    }
+  }
+
   async function onDeleteAccount() {
     setDeletingAccount(true);
     setNotice("");
@@ -106,6 +137,8 @@ export default function Saved() {
     }
   }
 
+  if (ready && user === null) return <Navigate to="/login" replace />;
+
   return (
     <Container className="py-10">
       <Breadcrumbs items={[{ label: "Home", href: "/" }, { label: meta.shortTitle }]} />
@@ -121,22 +154,6 @@ export default function Saved() {
             The site owner has not added sign in keys yet.
           </Alert>
         )}
-        {ready && configured && user === null && (
-          <Card>
-            <p className="font-semibold">Sign in required.</p>
-            <p className="mt-1 text-muted">
-              Sign in to see the reports saved to your account.
-            </p>
-            <p className="mt-4">
-              <Link
-                to="/signin"
-                className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md bg-accent px-5 font-semibold text-white transition-colors duration-150 hover:bg-accent-strong"
-              >
-                Go to sign in
-              </Link>
-            </p>
-          </Card>
-        )}
         {notice !== "" && <Alert tone="success" title={notice} />}
         {loadError !== "" && (
           <Alert tone="error" title="Something went wrong.">
@@ -144,7 +161,7 @@ export default function Saved() {
             {loadErrorCode === "UNAUTHORIZED" && (
               <p className="mt-1">
                 Your session may have expired.{" "}
-                <Link to="/signin" className="underline underline-offset-4">
+                <Link to="/login" className="underline underline-offset-4">
                   Sign in again.
                 </Link>
               </p>
@@ -200,6 +217,35 @@ export default function Saved() {
               <p className="mt-3 text-sm text-muted">{entry.summary}</p>
             </Card>
           ))}
+        {ready &&
+          user !== null &&
+          reports !== null &&
+          reports.length >= 1 &&
+          profile !== null &&
+          profile.help_feedback === "" &&
+          !feedbackSaved && (
+            <Card>
+              <p className="font-semibold">How did it help you?</p>
+              <p className="mt-1 text-muted">
+                You ran your first report. One line on what it changed is enough.
+              </p>
+              <form onSubmit={onFeedback} noValidate className="mt-4">
+                <div className="space-y-4">
+                  <Textarea
+                    id="saved-feedback"
+                    label="Your feedback (optional)"
+                    value={feedback}
+                    onChange={(event) => setFeedback(event.target.value)}
+                  />
+                  <div>
+                    <Button type="submit" loading={feedbackBusy}>
+                      Save feedback
+                    </Button>
+                  </div>
+                </div>
+              </form>
+            </Card>
+          )}
         {ready && user !== null && (
           <Card>
             <p className="font-semibold">Delete your account</p>

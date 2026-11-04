@@ -4,15 +4,15 @@
 // Usage: npm run build (runs this automatically), optionally with
 // SITE_URL=https://example.com for absolute canonical, OG, and sitemap URLs.
 // Without SITE_URL those URLs fall back to site-relative paths.
-import { readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const dist = join(here, "..", "dist");
-const SITE_URL = (process.env.SITE_URL || "").replace(/\/$/, "");
-const LASTMOD = "2026-11-02";
+const SITE_URL = (process.env.SITE_URL || "https://fix-it-proper.vercel.app").replace(/\/$/, "");
+const LASTMOD = "2026-11-04";
 const EMAIL = "xyber2307@gmail.com";
 
 const abs = (path) => (SITE_URL === "" ? path : `${SITE_URL}${path}`);
@@ -120,6 +120,7 @@ const outputs = [
 ];
 
 for (const output of outputs) {
+  mkdirSync(join(dist, dirname(output.file)), { recursive: true });
   writeFileSync(join(dist, output.file), await renderPage(output.meta, output.url, output.jsonLd));
   console.log(`prerendered ${output.file}`);
 }

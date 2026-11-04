@@ -69,19 +69,24 @@ function IssueCard({ issue }: { issue: Issue }) {
               {issue.evidence.value}
             </code>
           </div>
-          <dl className="mt-3 grid gap-3 text-sm sm:grid-cols-2">
-            <div>
-              <dt className="font-semibold">Why it matters</dt>
-              <dd className="mt-0.5">{issue.why_it_matters}</dd>
-            </div>
-            <div>
-              <dt className="font-semibold">Suggested fix</dt>
-              <dd className="mt-0.5">{issue.suggested_fix}</dd>
-            </div>
-          </dl>
-          <p className="mt-2 text-sm text-muted">
-            Source: {issue.source} · {Math.round(issue.confidence * 100)}% confidence
-          </p>
+          <details className="mt-2">
+            <summary className="inline-block min-h-[44px] cursor-pointer py-3 font-semibold text-accent">
+              Explain this
+            </summary>
+            <dl className="grid gap-3 text-sm sm:grid-cols-2">
+              <div>
+                <dt className="font-semibold">Why it matters</dt>
+                <dd className="mt-0.5">{issue.why_it_matters}</dd>
+              </div>
+              <div>
+                <dt className="font-semibold">Suggested fix</dt>
+                <dd className="mt-0.5">{issue.suggested_fix}</dd>
+              </div>
+            </dl>
+            <p className="mt-2 text-sm text-muted">
+              Source: {issue.source} · {Math.round(issue.confidence * 100)}% confidence
+            </p>
+          </details>
         </div>
       </div>
     </Card>

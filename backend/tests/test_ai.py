@@ -212,7 +212,32 @@ def test_timeout_fails_fast_without_retry():
     )
     assert len(client.calls) == 1
     assert result.rewrites == []
-    assert len(result.limitations) == 1
+    assert result.limitations == [
+        "AI request failed (the request timed out); showing deterministic text with no rewrites."
+    ]
+
+
+def test_api_error_kinds_name_the_cause():
+    cases = {
+        "unauthorized": "the API key was rejected; check GROQ_API_KEY",
+        "not_found": "the model name was rejected; check GROQ_MODEL",
+        "rate_limited": "the API quota is exhausted; try again later",
+        "transport": "the API call failed; check the key and model name",
+    }
+    for kind, detail in cases.items():
+        client = FakeClient([AIError(kind)])  # type: ignore[list-item]
+        result = enhance_issues(
+            _issues(),
+            page_text="text",
+            originals=_originals(),
+            settings=_settings(),
+            client=client,
+        )
+        assert len(client.calls) == 1
+        assert result.rewrites == []
+        assert result.limitations == [
+            f"AI request failed ({detail}); showing deterministic text with no rewrites."
+        ]
 
 
 def test_empty_output_retries():

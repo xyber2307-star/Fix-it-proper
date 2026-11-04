@@ -5,7 +5,9 @@ from typing import Any, Literal, Protocol
 
 from groq import APIConnectionError, APIError, APITimeoutError, Groq
 
-AIErrorKind = Literal["timeout", "transport", "malformed", "empty"]
+AIErrorKind = Literal[
+    "timeout", "transport", "unauthorized", "not_found", "rate_limited", "malformed", "empty"
+]
 
 
 class AIError(Exception):
@@ -44,6 +46,13 @@ class GroqClient:
         except APITimeoutError as exc:
             raise AIError("timeout") from exc
         except (APIConnectionError, APIError) as exc:
+            status = getattr(exc, "status_code", None)
+            if status == 401:
+                raise AIError("unauthorized") from exc
+            if status == 404:
+                raise AIError("not_found") from exc
+            if status == 429:
+                raise AIError("rate_limited") from exc
             raise AIError("transport") from exc
         if not response.choices:
             raise AIError("empty")

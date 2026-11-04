@@ -1,23 +1,21 @@
-import { Suspense, lazy, useEffect } from "react";
+import { useEffect } from "react";
 import type { ReactNode } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { useAuth } from "./auth/AuthContext";
-import Container from "./components/Container";
 import Footer from "./components/Footer";
 import Header from "./components/Header";
 import SkipLink from "./components/SkipLink";
+import Contact from "./pages/Contact";
+import Creative from "./pages/Creative";
 import Home from "./pages/Home";
-
-const Privacy = lazy(() => import("./pages/Privacy"));
-const Terms = lazy(() => import("./pages/Terms"));
-const Contact = lazy(() => import("./pages/Contact"));
-const SignIn = lazy(() => import("./pages/SignIn"));
-const Saved = lazy(() => import("./pages/Saved"));
-const Onboarding = lazy(() => import("./pages/Onboarding"));
-const Settings = lazy(() => import("./pages/Settings"));
-const Creative = lazy(() => import("./pages/Creative"));
-const LearnSeo = lazy(() => import("./pages/LearnSeo"));
-const NotFound = lazy(() => import("./pages/NotFound"));
+import LearnSeo from "./pages/LearnSeo";
+import NotFound from "./pages/NotFound";
+import Onboarding from "./pages/Onboarding";
+import Privacy from "./pages/Privacy";
+import Saved from "./pages/Saved";
+import Settings from "./pages/Settings";
+import SignIn from "./pages/SignIn";
+import Terms from "./pages/Terms";
 
 function RequireAuth({ children }: { children: ReactNode }) {
   const { user, ready, configured } = useAuth();
@@ -48,14 +46,7 @@ export default function Site() {
       <SkipLink />
       <Header />
       <main id="main-content">
-        <Suspense
-          fallback={
-            <Container className="py-10">
-              <p role="status">Loading page…</p>
-            </Container>
-          }
-        >
-          <Routes>
+        <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/privacy.html" element={<Privacy />} />
@@ -144,8 +135,7 @@ export default function Site() {
               }
             />
             <Route path="*" element={<NotFound />} />
-          </Routes>
-        </Suspense>
+        </Routes>
       </main>
       <Footer />
     </>

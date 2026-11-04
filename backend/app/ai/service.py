@@ -33,6 +33,9 @@ _API_FAILED = "AI request failed ({}); showing deterministic text with no rewrit
 _API_REASONS = {
     "timeout": "the request timed out",
     "transport": "the API call failed; check the key and model name",
+    "unauthorized": "the API key was rejected; check GROQ_API_KEY",
+    "not_found": "the model name was rejected; check GROQ_MODEL",
+    "rate_limited": "the API quota is exhausted; try again later",
     "malformed": "the API returned invalid JSON",
     "empty": "the API returned no content",
 }
@@ -79,7 +82,9 @@ def _complete_validated(client: AIClient, system: str, user: str, model: type[_M
         try:
             payload = client.complete_json(system, user)
         except AIError as exc:
-            if exc.kind in ("timeout", "transport") or attempt == 1:
+            if exc.kind in ("timeout", "transport", "unauthorized", "not_found", "rate_limited"):
+                raise
+            if attempt == 1:
                 raise
             continue
         try:

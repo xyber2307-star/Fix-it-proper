@@ -1,7 +1,8 @@
 import { useEffect } from "react";
 import type { ReactNode } from "react";
-import { Navigate, Route, Routes, useLocation } from "react-router-dom";
+import { Link, Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "./auth/AuthContext";
+import Container from "./components/Container";
 import Footer from "./components/Footer";
 import Header from "./components/Header";
 import SkipLink from "./components/SkipLink";
@@ -19,16 +20,44 @@ import Terms from "./pages/Terms";
 
 function RequireAuth({ children }: { children: ReactNode }) {
   const { user, ready, configured } = useAuth();
-  if (!ready) return null;
-  if (user === null || !configured) return <Navigate to="/login" replace />;
-  return <>{children}</>;
+  const navigate = useNavigate();
+  const blocked = ready && (user === null || !configured);
+  useEffect(() => {
+    if (blocked) navigate("/login", { replace: true });
+  }, [blocked, navigate]);
+  if (!blocked) return <>{children}</>;
+  return (
+    <Container className="py-10">
+      <h1 className="font-serif text-3xl font-semibold">Sign in required</h1>
+      <p className="mt-2 text-muted">
+        This page needs an account.{" "}
+        <Link to="/login" className="underline underline-offset-4">
+          Go to sign in.
+        </Link>
+      </p>
+    </Container>
+  );
 }
 
 function RequireProfile({ children }: { children: ReactNode }) {
   const { profileComplete, profileLoaded } = useAuth();
-  if (!profileLoaded) return null;
-  if (!profileComplete) return <Navigate to="/onboarding" replace />;
-  return <>{children}</>;
+  const navigate = useNavigate();
+  const blocked = profileLoaded && !profileComplete;
+  useEffect(() => {
+    if (blocked) navigate("/onboarding", { replace: true });
+  }, [blocked, navigate]);
+  if (!blocked) return <>{children}</>;
+  return (
+    <Container className="py-10">
+      <h1 className="font-serif text-3xl font-semibold">Finish your business profile</h1>
+      <p className="mt-2 text-muted">
+        One step is still missing.{" "}
+        <Link to="/onboarding" className="underline underline-offset-4">
+          Continue onboarding.
+        </Link>
+      </p>
+    </Container>
+  );
 }
 
 function ScrollToTop() {
